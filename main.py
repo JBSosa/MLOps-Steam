@@ -5,13 +5,22 @@ import pyarrow
 
 app = FastAPI()
 
+steamGamesData=pd.read_parquet('steamGames.parquet')
+userReviewsExplodedData=pd.read_parquet('userReviewsExploded.parquet')
+steamGamesDevData=pd.read_parquet('steamGamesDev.parquet')
+userRecommendData=pd.read_parquet('userReviewsExploded.parquet')
+userItemsData=pd.read_parquet('userItemsExploded.parquet')
+userItemCountData=pd.read_parquet('userItemCount.parquet')
+steamGamesPriceData=pd.read_parquet('steamGamesPrice.parquet')
+steamGamesGenres=pd.read_parquet('steamGamesGenres.parquet')
+userItemsExplodedData=pd.read_parquet('userItemsExploded.parquet')
+
 @app.get("/")
 async def root():
   return {"message": "Hello World"}
 
 @app.get("/developer/{dev}")
 def developer(dev: str):
-  steamGamesData=pd.read_parquet('steamGames.parquet')
   steamGamesDf=pd.DataFrame(steamGamesData)
   filteredDf=steamGamesDf[steamGamesDf['developer']==dev]
   totalApps=filteredDf.groupby('release_year').size().reset_index(name='Cantidad de Items')
@@ -26,19 +35,14 @@ def developer(dev: str):
 
 @app.get("/userdata/{userId}")
 def userdata(userId: str):
-  userRecommendData=pd.read_parquet('userReviewsExploded.parquet')
-  userItemsData=pd.read_parquet('userItemsExploded.parquet')
-  userItemCountData=pd.read_parquet('userItemCount.parquet')
-  gamePriceData=pd.read_parquet('steamGamesPrice.parquet')
-  #Convertir a DataFrame
   userRecommendDf=pd.DataFrame(userRecommendData)
   userItemsDf=pd.DataFrame(userItemsData)
   userItemCountDf=pd.DataFrame(userItemCountData)
-  gamePriceDf=pd.DataFrame(gamePriceData)
+  gamePriceDf=pd.DataFrame(steamGamesPriceData)
   #Filtrar por usuario
   userRecommendDf=userRecommendDf[userRecommendDf['user_id']==userId].reset_index(drop=True)
   userItemsDf=userItemsDf[userItemsDf['user_id']==userId].reset_index(drop=True)
-  userItemsDf=pd.merge(userItemsDf,gamePriceDf,how='left',on='item_id')
+  userItemsDf=pd.merge(userItemsDf,steamGamesPriceDf,how='left',on='item_id')
   userItemCountDf=userItemCountDf[userItemCountDf['user_id']==userId].reset_index(drop=True)
   #Componer DataFrame de respuesta
   resultData={'Usuario': [userId]}
@@ -52,35 +56,31 @@ def userdata(userId: str):
 @app.get("/userforgenre/{genre}")
 def UserForGenre(genre: str):
   genre=genre.lower()
-  gameGenreData=pd.read_parquet('steamGamesGenres.parquet')
-  userItemsExplodedData=pd.read_parquet('userItemsExploded.parquet')
-  gameGenreDf=pd.DataFrame(gameGenreData)
+  steamGamesGenreDf=pd.DataFrame(steamGamesGenres)
   userItemsExplodedDf=pd.DataFrame(userItemsExplodedData)
-  gameGenreDf['genres']=gameGenreDf['genres'].apply(lambda lst: [element.lower() for element in lst])
-  gameGenreDf=gameGenreDf[gameGenreDf['genres'].apply(lambda x: genre in x if isinstance(x, list) else False)]
-  gameGenreDf=pd.merge(gameGenreDf[['item_id','release_year']],userItemsExplodedDf,how='left',on='item_id')
-  gameGenreDf=gameGenreDf.dropna(subset='playtime')
-  userId=gameGenreDf.groupby('user_id')['playtime'].sum().reset_index().sort_values(by='playtime',ascending=False).iloc[0,0]
-  gameGenreDf=gameGenreDf[gameGenreDf['user_id']==userId].groupby('release_year')['playtime'].sum().reset_index().sort_values(by='release_year',ascending=False)
-  gameGenreDf['playtime']=(gameGenreDf['playtime']/60).round(2)
-  gameGenreDf.rename(columns={'release_year': 'Año'}, inplace=True)
-  gameGenreDf.rename(columns={'playtime': 'Horas jugadas'}, inplace=True)
-  resultPlaytime=gameGenreDf.to_dict(orient='records')
+  steamGamesGenreDf['genres']=steamGamesGenreDf['genres'].apply(lambda lst: [element.lower() for element in lst])
+  steamGamesGenreDf=steamGamesGenreDf[steamGamesGenreDf['genres'].apply(lambda x: genre in x if isinstance(x, list) else False)]
+  steamGamesGenreDf=pd.merge(steamGamesGenreDf[['item_id','release_year']],userItemsExplodedDf,how='left',on='item_id')
+  steamGamesGenreDf=steamGamesGenreDf.dropna(subset='playtime')
+  userId=steamGamesGenreDf.groupby('user_id')['playtime'].sum().reset_index().sort_values(by='playtime',ascending=False).iloc[0,0]
+  steamGamesGenreDf=steamGamesGenreDf[steamGamesGenreDf['user_id']==userId].groupby('release_year')['playtime'].sum().reset_index().sort_values(by='release_year',ascending=False)
+  steamGamesGenreDf['playtime']=(steamGamesGenreDf['playtime']/60).round(2)
+  steamGamesGenreDf.rename(columns={'release_year': 'Año'}, inplace=True)
+  steamGamesGenreDf.rename(columns={'playtime': 'Horas jugadas'}, inplace=True)
+  resultPlaytime=steamGamesGenreDf.to_dict(orient='records')
   result={'Usuario con más horas jugadas para Género ' + genre:userId,'Horas jugadas':resultPlaytime}
   return JSONResponse(content=result)
 
 @app.get("/bestdeveloperyear/{year}")
 def best_developer_year(year: int):
-  userReviewsData=pd.read_parquet('userReviewsExploded.parquet')
-  steamGamesDevData=pd.read_parquet('steamGamesDev.parquet')
-  userReviewsDf=pd.DataFrame(userReviewsData)
+  userReviewsExplodedDf=pd.DataFrame(userReviewsExplodedData)
   steamGamesDevDf=pd.DataFrame(steamGamesDevData)
-  userReviewsDf = userReviewsDf[(userReviewsDf['recommend'] == True) & 
-                               (userReviewsDf['sentiment_analysis'] == 2) & 
-                               (userReviewsDf['review_year'] == year)]
-  userReviewsDf['review_year']=userReviewsDf['review_year'].astype(int)
-  userReviewsDf=userReviewsDf.groupby('item_id')['recommend'].count().reset_index()
-  steamGamesDevDf=pd.merge(steamGamesDevDf[['item_id','developer']],userReviewsDf,how='left',on='item_id').sort_values(by='recommend',ascending=False)
+  userReviewsExplodedDf = userReviewsExplodedDf[(userReviewsExplodedDf['recommend'] == True) & 
+                               (userReviewsExplodedDf['sentiment_analysis'] == '2') & 
+                               (userReviewsExplodedDf['review_year'] == year)]
+  userReviewsExplodedDf['review_year']=userReviewsExplodedDf['review_year'].astype(int)
+  userReviewsExplodedDf=userReviewsExplodedDf.groupby('item_id')['recommend'].count().reset_index()
+  steamGamesDevDf=pd.merge(steamGamesDevDf[['item_id','developer']],userReviewsExplodedDf,how='left',on='item_id').sort_values(by='recommend',ascending=False)
   steamGamesDevDf=steamGamesDevDf.groupby('developer')['recommend'].sum().reset_index().sort_values(by='recommend',ascending=False)
   if steamGamesDevDf.iloc[1,1]!=0:
     first=steamGamesDevDf.iloc[0,0]
@@ -94,14 +94,12 @@ def best_developer_year(year: int):
 @app.get("/developerreviewsanalysis/{dev}")
 def developer_reviews_analysis(dev: str):
   dev=dev.lower()
-  userReviewsData=pd.read_parquet('userReviewsExploded.parquet')
-  steamGamesDevData=pd.read_parquet('steamGamesDev.parquet')
-  userReviewsDf=pd.DataFrame(userReviewsData)
   steamGamesDevDf=pd.DataFrame(steamGamesDevData)
+  userReviewsExplodedDf=pd.DataFrame(userReviewsExplodedData)
   steamGamesDevDf=steamGamesDevDf[steamGamesDevDf['developer'].str.lower()== dev]
-  userReviewsDf=userReviewsDf.groupby('item_id')['sentiment_analysis'].agg([('positive', lambda x: (x == 2).sum()),
-    ('negative', lambda x: (x == 0).sum())]).reset_index()
-  steamGamesDevDf=pd.merge(steamGamesDevDf,userReviewsDf,how='left',on='item_id')
+  userReviewsExplodedDf=userReviewsExplodedDf.groupby('item_id')['sentiment_analysis'].agg([('positive', lambda x: (x == '2').sum()),
+    ('negative', lambda x: (x == '0').sum())]).reset_index()
+  steamGamesDevDf=pd.merge(steamGamesDevDf,userReviewsExplodedDf,how='left',on='item_id')
   steamGamesDevDf=steamGamesDevDf.groupby('developer')[['positive','negative']].sum().reset_index()
   positive=steamGamesDevDf.iloc[0,1].astype(int).astype(str)
   negative=steamGamesDevDf.iloc[0,2].astype(int).astype(str)
