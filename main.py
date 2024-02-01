@@ -1,32 +1,23 @@
 from fastapi import FastAPI
 import pandas as pd
 from fastapi.responses import JSONResponse
-import patoolib
 
 app = FastAPI()
-
-patoolib.extract_archive('steamGames.rar')
-patoolib.extract_archive('steamGamesDev.rar')
-patoolib.extract_archive('steamGamesGenres.rar')
-patoolib.extract_archive('userItemCount.rar')
-patoolib.extract_archive('userItems.rar')
-patoolib.extract_archive('userReviews.rar')
-patoolib.extract_archive('userReviewsExploded.rar')
-patoolib.extract_archive('userItemsExploded.rar')
-patoolib.extract_archive('steamGamesPrice.rar')
 
 @app.get("/")
 async def root():
   return {"message": "Hello World"}
 
-@app.get("/developer/{desarrollador}")
-def developer(desarrollador: str):
-  steamGamesData=pd.read_csv('steamGames.csv')
+@app.get("/developer/{dev}")
+def developer(dev: str):
+  steamGamesData=pd.read_parquet('steamGames.parquet')
   steamGamesDf=pd.DataFrame(steamGamesData)
-  filteredDf=steamGamesDf[steamGamesDf['developer']==desarrollador]
-  totalApps=filteredDf.groupby('Año').size().reset_index(name='Cantidad de Items')
-  freeApps=filteredDf[filteredDf['price'].str.lower() == 'free'].groupby('Año').size().reset_index(name='free_items')
-  result = pd.merge(totalApps, freeApps, on='Año', how='left').fillna(0)
+  filteredDf=steamGamesDf[steamGamesDf['developer']==dev]
+  totalApps=filteredDf.groupby('release_year').size().reset_index(name='Cantidad de Items')
+  filteredDf=filteredDf.dropna(subset=['price'])
+  freeApps=filteredDf[filteredDf['price']==0].groupby('release_year').size().reset_index(name='free_items')
+  result = pd.merge(totalApps, freeApps, on='release_year', how='left').fillna(0)
+  result.rename(columns={'release_year': 'Año'}, inplace=True)
   result['Contenido Free'] = ((result['free_items'] / result['Cantidad de Items']) * 100).round(2).astype(str) + '%'
   result=result[['Año','Cantidad de Items','Contenido Free']].reset_index(drop=True)
   result=result.to_dict(orient='records')
@@ -34,11 +25,10 @@ def developer(desarrollador: str):
 
 @app.get("/userdata/{userId}")
 def userdata(userId: str):
-  #Cargar CSV
-  userRecommendData=pd.read_csv('userReviewsExploded.csv')
-  userItemsData=pd.read_csv('userItemsExploded.csv')
-  userItemCountData=pd.read_csv('userItemCount.csv')
-  gamePriceData=pd.read_csv('steamGamesPrice.csv')
+  userRecommendData=pd.read_parquet('userReviewsExploded.parquet')
+  userItemsData=pd.read_parquet('userItemsExploded.parquet')
+  userItemCountData=pd.read_parquet('userItemCount.parquet')
+  gamePriceData=pd.read_parquet('steamGamesPrice.parquet')
   #Convertir a DataFrame
   userRecommendDf=pd.DataFrame(userRecommendData)
   userItemsDf=pd.DataFrame(userItemsData)
@@ -47,13 +37,13 @@ def userdata(userId: str):
   #Filtrar por usuario
   userRecommendDf=userRecommendDf[userRecommendDf['user_id']==userId].reset_index(drop=True)
   userItemsDf=userItemsDf[userItemsDf['user_id']==userId].reset_index(drop=True)
-  userItemsDf=pd.merge(userItemsDf,gamePriceDf,how='left',left_on='item_id',right_on='id')
+  userItemsDf=pd.merge(userItemsDf,gamePriceDf,how='left',on='item_id')
   userItemCountDf=userItemCountDf[userItemCountDf['user_id']==userId].reset_index(drop=True)
   #Componer DataFrame de respuesta
   resultData={'Usuario': [userId]}
   resultDf=pd.DataFrame(resultData)
   resultDf['Dinero Gastado']=pd.to_numeric(userItemsDf['price'], errors='coerce').sum()
-  resultDf['% de recomendación']=(userRecommendDf['recommend'].mean()) * 100
+  resultDf['% de recomendación']=((userRecommendDf['recommend'].mean()) * 100).round(2).astype(str) + '%'
   resultDf['Cantidad de Items']=userItemCountDf['items_count']
   result=resultDf.to_dict(orient='records')
   return JSONResponse(content=result)
@@ -61,12 +51,12 @@ def userdata(userId: str):
 @app.get("/userforgenre/{genre}")
 def UserForGenre(genre: str):
   genre=genre.lower()
-  gameGenreData=pd.read_csv('steamGamesGenres.csv')
-  userItemsExplodedData=pd.read_csv('userItemsExploded.csv')
+  gameGenreData=pd.read_parquet('steamGamesGenres.parquet')
+  userItemsExplodedData=pd.read_parquet('userItemsExploded.parquet')
   gameGenreDf=pd.DataFrame(gameGenreData)
   userItemsExplodedDf=pd.DataFrame(userItemsExplodedData)
-  gameGenreDf['genres']=gameGenreDf['genres'].str.lower()
-  gameGenreDf=gameGenreDf[gameGenreDf['genres'].apply(lambda x: genre in x)]
+  gameGenreDf['genres']=gameGenreDf['genres'].apply(lambda lst: [element.lower() for element in lst])
+  gameGenreDf=gameGenreDf[gameGenreDf['genres'].apply(lambda x: genre in x if isinstance(x, list) else False)]
   gameGenreDf=pd.merge(gameGenreDf[['item_id','release_year']],userItemsExplodedDf,how='left',on='item_id')
   gameGenreDf=gameGenreDf.dropna(subset='playtime')
   userId=gameGenreDf.groupby('user_id')['playtime'].sum().reset_index().sort_values(by='playtime',ascending=False).iloc[0,0]
@@ -80,13 +70,13 @@ def UserForGenre(genre: str):
 
 @app.get("/bestdeveloperyear/{year}")
 def best_developer_year(year: int):
-  userReviewsData=pd.read_csv('userReviewsExploded.csv')
-  steamGamesDevData=pd.read_csv('steamGamesDev.csv')
+  userReviewsData=pd.read_parquet('userReviewsExploded.parquet')
+  steamGamesDevData=pd.read_parquet('steamGamesDev.parquet')
   userReviewsDf=pd.DataFrame(userReviewsData)
   steamGamesDevDf=pd.DataFrame(steamGamesDevData)
-  userReviewsDf=userReviewsDf[userReviewsDf['recommend']==True]
-  userReviewsDf=userReviewsDf[userReviewsDf['sentiment_analysis']==2]
-  userReviewsDf=userReviewsDf[userReviewsDf['review_year']==year]
+  userReviewsDf = userReviewsDf[(userReviewsDf['recommend'] == True) & 
+                               (userReviewsDf['sentiment_analysis'] == 2) & 
+                               (userReviewsDf['review_year'] == year)]
   userReviewsDf['review_year']=userReviewsDf['review_year'].astype(int)
   userReviewsDf=userReviewsDf.groupby('item_id')['recommend'].count().reset_index()
   steamGamesDevDf=pd.merge(steamGamesDevDf[['item_id','developer']],userReviewsDf,how='left',on='item_id').sort_values(by='recommend',ascending=False)
@@ -98,14 +88,13 @@ def best_developer_year(year: int):
     result=[{'Puesto 1':first},{'Puesto 2':second},{'Puesto 3':third}]
   else:
     result=[{'Puesto 1':None},{'Puesto 2':None},{'Puesto 3':None}]
-  result=[{'Puesto 1':first},{'Puesto 2':second},{'Puesto 3':third}]
   return JSONResponse(content=result)
 
 @app.get("/developerreviewsanalysis/{dev}")
 def developer_reviews_analysis(dev: str):
   dev=dev.lower()
-  userReviewsData=pd.read_csv('userReviewsExploded.csv')
-  steamGamesDevData=pd.read_csv('steamGamesDev.csv')
+  userReviewsData=pd.read_parquet('userReviewsExploded.parquet')
+  steamGamesDevData=pd.read_parquet('steamGamesDev.parquet')
   userReviewsDf=pd.DataFrame(userReviewsData)
   steamGamesDevDf=pd.DataFrame(steamGamesDevData)
   steamGamesDevDf=steamGamesDevDf[steamGamesDevDf['developer'].str.lower()== dev]
