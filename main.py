@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 import pandas as pd
 from fastapi.responses import JSONResponse
+import pyarrow
 
 app = FastAPI()
 
