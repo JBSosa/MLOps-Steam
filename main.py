@@ -1,9 +1,19 @@
 from fastapi import FastAPI
 import pandas as pd
 from fastapi.responses import JSONResponse
+import patoolib
 
 app = FastAPI()
 
+patoolib.extract_archive('steamGames.rar')
+patoolib.extract_archive('steamGamesDev.rar')
+patoolib.extract_archive('steamGamesGenres.rar')
+patoolib.extract_archive('userItemCount.rar')
+patoolib.extract_archive('userItems.rar')
+patoolib.extract_archive('userReviews.rar')
+patoolib.extract_archive('userReviewsExploded.rar')
+patoolib.extract_archive('userItemsExploded.rar')
+patoolib.extract_archive('steamGamesPrice.rar')
 
 @app.get("/")
 async def root():
