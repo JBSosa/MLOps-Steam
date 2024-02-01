@@ -5,15 +5,9 @@ import pyarrow
 
 app = FastAPI()
 
-steamGamesData=pd.read_parquet('steamGames.parquet')
-userReviewsExplodedData=pd.read_parquet('userReviewsExploded.parquet')
-steamGamesDevData=pd.read_parquet('steamGamesDev.parquet')
-userRecommendData=pd.read_parquet('userReviewsExploded.parquet')
-userItemsData=pd.read_parquet('userItemsExploded.parquet')
-userItemCountData=pd.read_parquet('userItemCount.parquet')
-steamGamesPriceData=pd.read_parquet('steamGamesPrice.parquet')
-steamGamesGenres=pd.read_parquet('steamGamesGenres.parquet')
-userItemsExplodedData=pd.read_parquet('userItemsExploded.parquet')
+
+
+
 
 @app.get("/")
 async def root():
@@ -21,6 +15,7 @@ async def root():
 
 @app.get("/developer/{dev}")
 def developer(dev: str):
+  steamGamesData=pd.read_parquet('steamGames.parquet')
   steamGamesDf=pd.DataFrame(steamGamesData)
   filteredDf=steamGamesDf[steamGamesDf['developer']==dev]
   totalApps=filteredDf.groupby('release_year').size().reset_index(name='Cantidad de Items')
@@ -35,6 +30,10 @@ def developer(dev: str):
 
 @app.get("/userdata/{userId}")
 def userdata(userId: str):
+  userRecommendData=pd.read_parquet('userReviewsExploded.parquet')
+  userItemsData=pd.read_parquet('userItemsExploded.parquet')
+  userItemCountData=pd.read_parquet('userItemCount.parquet')
+  steamGamesPriceData=pd.read_parquet('steamGamesPrice.parquet')
   userRecommendDf=pd.DataFrame(userRecommendData)
   userItemsDf=pd.DataFrame(userItemsData)
   userItemCountDf=pd.DataFrame(userItemCountData)
@@ -56,6 +55,8 @@ def userdata(userId: str):
 @app.get("/userforgenre/{genre}")
 def UserForGenre(genre: str):
   genre=genre.lower()
+  steamGamesGenres=pd.read_parquet('steamGamesGenres.parquet')
+  userItemsExplodedData=pd.read_parquet('userItemsExploded.parquet')
   steamGamesGenreDf=pd.DataFrame(steamGamesGenres)
   userItemsExplodedDf=pd.DataFrame(userItemsExplodedData)
   steamGamesGenreDf['genres']=steamGamesGenreDf['genres'].apply(lambda lst: [element.lower() for element in lst])
@@ -73,6 +74,8 @@ def UserForGenre(genre: str):
 
 @app.get("/bestdeveloperyear/{year}")
 def best_developer_year(year: int):
+  userReviewsExplodedData=pd.read_parquet('userReviewsExploded.parquet')
+  steamGamesDevData=pd.read_parquet('steamGamesDev.parquet')
   userReviewsExplodedDf=pd.DataFrame(userReviewsExplodedData)
   steamGamesDevDf=pd.DataFrame(steamGamesDevData)
   userReviewsExplodedDf = userReviewsExplodedDf[(userReviewsExplodedDf['recommend'] == True) & 
@@ -94,6 +97,8 @@ def best_developer_year(year: int):
 @app.get("/developerreviewsanalysis/{dev}")
 def developer_reviews_analysis(dev: str):
   dev=dev.lower()
+  userReviewsExplodedData=pd.read_parquet('userReviewsExploded.parquet')
+  steamGamesDevData=pd.read_parquet('steamGamesDev.parquet')
   steamGamesDevDf=pd.DataFrame(steamGamesDevData)
   userReviewsExplodedDf=pd.DataFrame(userReviewsExplodedData)
   steamGamesDevDf=steamGamesDevDf[steamGamesDevDf['developer'].str.lower()== dev]
