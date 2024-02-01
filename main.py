@@ -37,7 +37,7 @@ def userdata(userId: str):
   userRecommendDf=pd.DataFrame(userRecommendData)
   userItemsDf=pd.DataFrame(userItemsData)
   userItemCountDf=pd.DataFrame(userItemCountData)
-  gamePriceDf=pd.DataFrame(steamGamesPriceData)
+  steamGamesPriceDf=pd.DataFrame(steamGamesPriceData)
   #Filtrar por usuario
   userRecommendDf=userRecommendDf[userRecommendDf['user_id']==userId].reset_index(drop=True)
   userItemsDf=userItemsDf[userItemsDf['user_id']==userId].reset_index(drop=True)
