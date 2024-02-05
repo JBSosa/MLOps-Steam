@@ -41,7 +41,7 @@ Pygments==2.17.2
 pyparsing==3.1.1
 python-dateutil==2.8.2
 pytz==2023.4
-pywin32==
+pywin32==305
 pyzmq==25.1.2
 regex==2023.12.25
 scikit-learn==1.4.0
