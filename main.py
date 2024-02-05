@@ -106,3 +106,14 @@ def developer_reviews_analysis(dev: str):
     negative = steamGamesDevDf.iloc[0,2].astype(int).astype(str)
     result = {steamGamesDevDf.iloc[0,0]:['Negative = ' + negative,'Positive = ' + positive]}
     return JSONResponse(content = result)
+
+@app.get("/recommenditem/{itemId}")
+def recommendItem(itemId: str):
+    itemSimData = pd.read_parquet('data/itemSim.parquet')
+    itemSimDf = pd.DataFrame(itemSimData)
+    counter = 1
+    result = {'Aquí hay juegos similares a': itemId,'1':'','2':'','3':'','4':'','5':''}
+    for item in itemSimDf.sort_values(by = itemId, ascending = False).index[1:6]:
+        result[str(counter)] = item
+        counter +=1
+    return JSONResponse(content = result)
