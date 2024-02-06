@@ -50,15 +50,11 @@ def userData(userId: str):
 
 @app.get("/userforgenre/{genre}")
 def userForGenre(genre: str):
-    # Se transfroma la variable a minúscula para poder realizar la búsqueda sin preocuparse por la capitalización
-    genre = genre.lower()
     # Se leen los datos y se crea el DataFrame
-    steamGamesGenresDf = pd.read_parquet('data/steamGamesGenres.parquet')
+    steamGamesGenresDf = pd.read_parquet('data/steamGamesGenresExploded.parquet')
     userItemsExplodedDf = pd.read_parquet('data/userItemsExploded.parquet')
-    # Se transforma igualmente la columna de 'genres' del DataFrame a minúscula
-    steamGamesGenresDf['genres'] = steamGamesGenresDf['genres'].apply(lambda lst: [element.lower() for element in lst])
     # Se filtra el DataFrame buscando el género solicitado entre los géneros del juego
-    steamGamesGenresDf = steamGamesGenresDf[steamGamesGenresDf['genres'].apply(lambda x: genre in x if isinstance(x, list) else False)]
+    steamGamesGenresDf = steamGamesGenresDf[steamGamesGenresDf['genres'].str.lower() == genre.lower()]
     # Se une el DataFrame con los géneros al DataFrame que contiene a los usuarios con sus ítems
     steamGamesGenresDf = pd.merge(steamGamesGenresDf[['item_id','release_year']],userItemsExplodedDf,how = 'left',on = 'item_id')
     # Se descartan todas las instancias que no contengan tiempo de juego
