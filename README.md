@@ -1,13 +1,5 @@
 # MLOps-Steam
 
-![Pandas](https://img.shields.io/badge/-Pandas-333333?style=flat&logo=pandas)
-![Numpy](https://img.shields.io/badge/-Numpy-333333?style=flat&logo=numpy)
-![Matplotlib](https://img.shields.io/badge/-Matplotlib-333333?style=flat&logo=matplotlib)
-![Seaborn](https://img.shields.io/badge/-Seaborn-333333?style=flat&logo=seaborn)
-![Scikitlearn](https://img.shields.io/badge/-Scikitlearn-333333?style=flat&logo=scikitlearn)
-![FastAPI](https://img.shields.io/badge/-FastAPI-333333?style=flat&logo=fastapi)
-![Render](https://img.shields.io/badge/-Render-333333?style=flat&logo=render)
-
 ## Introducción
 
 Este proyecto simula las funciones de un ingeniero MLOps, que combina las responsabilidades de un ingeniero de datos y un científico de datos, para la plataforma internacional de videojuegos Steam. La tarea consiste en desarrollar un Producto Mínimo Viable utilizando datos proporcionados, con el objetivo de implementar una API en un servicio en la nube. El producto final debe incluir la aplicación de dos modelos de Machine Learning: en primer lugar, un análisis de sentimientos de los comentarios de los usuarios de los juegos, y en segundo lugar, la capacidad de recomendar juegos basándose en el nombre de un juego y/o en los gustos específicos de un usuario.

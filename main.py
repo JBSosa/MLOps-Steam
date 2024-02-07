@@ -7,7 +7,7 @@ app = FastAPI()
 
 @app.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {'Mensaje': '¡Bienvenidos! A continuación les dejamos los endpoints y las variables que reciben.', 'developer':'Nombre de desarrollador', 'userdata':'Nombre de usuario','userforgenre':'Género de juego','bestdeveloperyear':'Año','developerreviewsanalysis':'Nombre de desarrollador','recommenditem':'Nombre de juego'}
 
 @app.get("/developer/{dev}")
 def developer(dev: str):
@@ -64,7 +64,6 @@ def userForGenre(genre: str):
     # Se filtra el DataFrame de acuerdo al usuario recuperado, se agrupa conforme al año de lanzamiento de los juegos y se suma el tiempo jugado
     steamGamesGenresDf = steamGamesGenresDf[steamGamesGenresDf['user_id'] == userId].groupby('release_year')['playtime'].sum().reset_index().sort_values(by = 'release_year',ascending = False)
     # Una vez se tiene toda la información, se transforman los datos y se crea el DataFrame de respuesta
-    steamGamesGenresDf['playtime'] = (steamGamesGenresDf['playtime']/60).round(2)
     steamGamesGenresDf.rename(columns = {'release_year': 'Año'}, inplace = True)
     steamGamesGenresDf.rename(columns = {'playtime': 'Horas jugadas'}, inplace = True)
     resultPlaytime = steamGamesGenresDf.to_dict(orient = 'records')
