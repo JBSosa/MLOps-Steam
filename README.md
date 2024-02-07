@@ -2,7 +2,7 @@
 
 ## Introducción
 
-Este proyecto simula las funciones de un ingeniero MLOps, que combina las responsabilidades de un ingeniero de datos y un científico de datos, para la plataforma internacional de videojuegos Steam. La tarea consiste en desarrollar un Producto Mínimo Viable utilizando datos proporcionados, con el objetivo de implementar una API en un servicio en la nube. El producto final debe incluir la aplicación de dos modelos de Machine Learning: en primer lugar, un análisis de sentimientos de los comentarios de los usuarios de los juegos, y en segundo lugar, la capacidad de recomendar juegos basándose en el nombre de un juego y/o en los gustos específicos de un usuario.
+Este proyecto simula las funciones de un ingeniero MLOps, que combina las responsabilidades de un ingeniero de datos y un científico de datos, para la plataforma internacional de videojuegos Steam. La tarea consiste en desarrollar un Producto Mínimo Viable utilizando datos proporcionados, con el objetivo de implementar una API en un servicio en la nube.
 
 ## Contexto
 
@@ -24,14 +24,14 @@ Para este proyecto se proporcionaron tres archivos JSON:
 
 Se llevó a cabo el proceso de Extracción, Transformación y Carga (ETL) de los tres conjuntos de datos proporcionados. Dos de estos conjuntos estaban anidados, lo que significa que contenían columnas con diccionarios o listas de diccionarios. Se implementaron diversas estrategias para transformar las claves de esos diccionarios en columnas independientes. Posteriormente, se procedió a completar valores nulos en variables esenciales para el proyecto y se eliminaron columnas con una cantidad significativa de valores nulos o que no aportaban al proyecto, con el objetivo de optimizar el rendimiento de la API y considerando las restricciones de almacenamiento en el despliegue. Para llevar a cabo estas transformaciones, se hizo uso de la biblioteca Pandas.
 
-Los detalles del ETL se puede ver en [ETL](https://github.com/JBSosa/MLOps-Steam/blob/main/Notebooks/ETL.ipynb).
+Los detalles del ETL se puede ver en la Jupyter Notebook [ETL](https://github.com/JBSosa/MLOps-Steam/blob/main/Notebooks/ETL.ipynb).
 
 ### Feature engineering
 
 Para cumplir con la solicitud de aplicar un análisis de sentimiento a los comentarios de los usuarios en este proyecto, se ha introducido una nueva columna denominada 'sentiment_analysis'. Esta columna sustituye a la que originalmente contenía los comentarios, clasificando los sentimientos de los mismos de acuerdo con la siguiente escala:
 
 * 0 si es malo,
-* 1 si es neutral o esta sin review
+* 1 si es neutral o no tiene reseña
 * 2 si es positivo.
 
 En este proyecto, centrado en la realización de una prueba de concepto, se ha implementado un análisis de sentimiento básico mediante Vader, una biblioteca de procesamiento de lenguaje natural (NLP) en Python. El propósito de esta metodología es asignar un valor numérico a un texto, específicamente a los comentarios dejados por los usuarios para un juego determinado, con el fin de representar si el sentimiento expresado en el texto es negativo, neutral o positivo.
@@ -44,7 +44,7 @@ Todos los detalles del desarrollo se pueden ver en la Jupyter Notebook [Sentimen
 
 ### Análisis exploratorio de los datos
 
-Se llevó a cabo un Análisis Exploratorio de Datos (EDA) sobre los tres conjuntos de datos sometidos al proceso de Extracción, Transformación y Carga (ETL). El objetivo principal fue identificar las variables que podrían ser utilizadas en la creación del modelo de recomendación. Para llevar a cabo este análisis, se empleó la biblioteca Pandas para la manipulación de datos, así como las librerías Matplotlib y Seaborn para la visualización.
+Se llevó a cabo un Análisis Exploratorio de Datos (EDA) sobre los conjuntos de datos sometidos al proceso de Extracción, Transformación y Carga (ETL). El objetivo principal fue identificar las variables que podrían ser utilizadas en la creación del modelo de recomendación. Para llevar a cabo este análisis, se empleó la biblioteca Pandas para la manipulación de datos, así como las librerías Matplotlib y Seaborn para la visualización.
 
 Específicamente para el modelo de recomendación, se decidió construir un dataframe específico que incluyera el identificador del usuario que realizó los comentarios, los nombres de los juegos a los que se les realizaron comentarios y una columna de calificación que se generó mediante la combinación del análisis de sentimiento y las recomendaciones de juegos. Este enfoque permitirá utilizar estas variables clave en la creación del modelo de recomendación.
 
@@ -52,9 +52,7 @@ El desarrollo de este análisis se encuentra en la Jupyter Notebook [EDA](https:
 
 ### Modelo de aprendizaje automático
 
-Se ha desarrollado un modelo de recomendación que genera listas de 5 juegos, ya sea ingresando el nombre de un juego. En el primer enfoque, el modelo se basa en una relación ítem-ítem, evaluando la similitud de un juego con el resto y recomendando aquellos juegos que son más similares. En el segundo enfoque, el modelo emplea un filtro usuario-juego, identificando usuarios similares y recomendando juegos que hayan gustado a esos usuarios afines.
-
-Ambos modelos se han implementado utilizando algoritmos basados en la memoria, específicamente abordando el problema del filtrado colaborativo. Estos algoritmos utilizan toda la base de datos para encontrar usuarios similares al usuario activo, es decir, aquellos para los cuales se desea realizar recomendaciones. Se emplean las preferencias de usuarios similares para predecir las valoraciones del usuario activo.
+Se ha desarrollado un modelo de recomendación que genera listas de 5 juegos, ingresando el nombre de un juego. El modelo se basa en una relación ítem-ítem, evaluando la similitud de un juego con el resto y recomendando aquellos juegos que son más similares.
 
 Para medir la similitud entre los juegos (itemSimilarity), se ha aplicado la similitud del coseno. Esta métrica, comúnmente utilizada en sistemas de recomendación y análisis de datos, evalúa la similitud entre dos conjuntos de datos o elementos. Se calcula mediante el coseno del ángulo entre los vectores que representan dichos datos o elementos, proporcionando una medida cuantitativa de su similitud.
 
